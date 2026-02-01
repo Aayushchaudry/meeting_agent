@@ -39,7 +39,7 @@ Most professionals spend 2–4 hours researching a client, yet often miss recent
 
 - **Frontend:** [Streamlit](https://streamlit.io/)
 - **Orchestration:** [CrewAI](https://crewai.com/)
-- **LLM:** [Anthropic Claude 3.5 Sonnet](https://www.anthropic.com/claude) (via CrewAI LLM)
+- **LLM:** [Anthropic Claude 4 Sonnet](https://www.anthropic.com/claude) (via CrewAI LLM)
 - **Search Engine:** [Serper.dev](https://serper.dev/) (Google Search API)
 - **Environment:** Python 3.12+
 
