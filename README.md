@@ -49,8 +49,8 @@ Most professionals spend 2–4 hours researching a client, yet often miss recent
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Shubhamsaboo/awesome-llm-apps.git
-cd advanced_ai_agents/single_agent_apps/ai_meeting_agent
+git clone https://github.com/Aayushchaudry/meeting_agent.git
+cd meeting_agent
 ```
 
 ### 2. Set Up Virtual Environment
@@ -108,5 +108,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-### 🎓 Tutorial
-**[Follow the step-by-step walkthrough here](https://www.theunwindai.com/p/build-multi-agent-ai-meeting-preparation-assistant)** to learn how to build this from scratch.
+
