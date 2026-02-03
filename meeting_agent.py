@@ -271,13 +271,17 @@ if anthropic_api_key and serper_api_key:
         """)
         
         discovery_term = st.text_input("Enter Topic/Keyword:", placeholder="e.g., 'Generative AI in Real Estate' or 'Women's Day'", key="disc_term")
-        discovery_company = st.text_input("Company Name (Optional):", placeholder="Enter a company name to limit search to their footprint", key="disc_co")
+        col1, col2 = st.columns(2)
+        with col1:
+            discovery_company = st.text_input("Company Name (Optional):", placeholder="Limit to a specific company", key="disc_co")
+        with col2:
+            discovery_region = st.text_input("Region/Country (Optional):", placeholder="e.g., 'India', 'UK', 'Global'", key="disc_region")
         
         # Define the Discovery Agent
         discovery_scout = Agent(
             role='Social Intelligence Scout',
-            goal='Discover and synthesize trending ideas, corporate stances, and employee discussions from LinkedIn',
-            backstory='You are an expert at digital forensic search and trend analysis. You can navigate social media footprints to find high-impact discussions and unique perspectives.',
+            goal='Discover and synthesize trending ideas, corporate stances, and employee discussions from LinkedIn with specific attention to URLs and regional nuances',
+            backstory='You are an expert at digital forensic search and trend analysis. You are particularly skilled at finding direct source links and identifying regional differences in how topics are discussed across the globe.',
             verbose=True,
             allow_delegation=False,
             llm=claude,
@@ -285,12 +289,13 @@ if anthropic_api_key and serper_api_key:
         )
         
         # Construct the search query logic
+        region_query = f' "{discovery_region}"' if discovery_region else ""
         if discovery_company:
-            search_query = f'site:linkedin.com "{discovery_company}" "{discovery_term}"'
-            task_description = f"Discover what employees and the official handle of '{discovery_company}' are saying about '{discovery_term}' on LinkedIn."
+            search_query = f'site:linkedin.com "{discovery_company}" "{discovery_term}"{region_query}'
+            task_description = f"Discover what employees and the official handle of '{discovery_company}' are saying about '{discovery_term}' on LinkedIn in {discovery_region if discovery_region else 'the specified context'}."
         else:
-            search_query = f'site:linkedin.com/posts/ OR site:linkedin.com/pulse/ "{discovery_term}"'
-            task_description = f"Identify the top trending ideas, discussions, and thought leadership articles on LinkedIn regarding '{discovery_term}'."
+            search_query = f'site:linkedin.com/posts/ OR site:linkedin.com/pulse/ "{discovery_term}"{region_query}'
+            task_description = f"Identify the top trending ideas, discussions, and thought leadership articles on LinkedIn regarding '{discovery_term}' in {discovery_region if discovery_region else 'the global context'}."
 
         discovery_task = Task(
             description=f"""
@@ -299,16 +304,18 @@ if anthropic_api_key and serper_api_key:
             Using the search query: {search_query}
             
             Perform the following:
-            1. Find the top 10-15 most relevant LinkedIn posts or articles.
+            1. Find the top 20-25 most relevant LinkedIn posts or articles.
             2. Identify 3-5 recurring themes or "mainstream" opinions.
             3. Highlight 2-3 unique or "contrarian" perspectives that stand out.
-            4. If a company was specified ({discovery_company}), analyze if their official stance matches the employee sentiment.
-            5. Provide a curated list of direct URLs to the most interesting posts found.
+            4. LIST AT LEAST 5 NOTABLE COMPANIES mentioned or active in these discussions.
+            5. IF A REGION WAS SPECIFIED ({discovery_region}), identify nuances specific to that market.
+            6. MANDATORY: Provide a curated list of at least 10 direct, clickable URLs to the most interesting posts found. 
+               Format them as: [Post Title/Author](URL) - Short Summary.
             
-            Format the report using professional markdown with headings for 'The Pulse', 'Mainstream Themes', 'Unique Perspectives', and 'Source Feed'.
+            Format the report using professional markdown with headings for 'The Pulse', 'Mainstream Themes', 'Regional Nuances', 'Notable Companies', 'Unique Perspectives', and 'Source Feed (Clickable Links)'.
             """,
             agent=discovery_scout,
-            expected_output="A structured Social Intelligence Report with themes, unique ideas, and a list of clickable LinkedIn URLs, formatted in markdown."
+            expected_output="A structured Social Intelligence Report with themes, regional insights, specific company names, and a mandatory list of clickable LinkedIn URLs, formatted in markdown."
         )
         
         discovery_crew = Crew(
