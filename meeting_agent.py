@@ -289,13 +289,17 @@ if anthropic_api_key and serper_api_key:
         )
         
         # Construct the search query logic
-        region_query = f' "{discovery_region}"' if discovery_region else ""
-        if discovery_company:
-            search_query = f'site:linkedin.com "{discovery_company}" "{discovery_term}"{region_query}'
-            task_description = f"Discover what employees and the official handle of '{discovery_company}' are saying about '{discovery_term}' on LinkedIn in {discovery_region if discovery_region else 'the specified context'}."
+        if discovery_region.lower() == "india":
+            # Targeted dorking for Indian LinkedIn subdomain and keywords
+            region_filter = 'site:in.linkedin.com/posts/ OR site:in.linkedin.com/pulse/ OR (site:linkedin.com/posts/ "India")'
+            search_query = f'{region_filter} "{discovery_term}"'
+            task_description = f"Identify the top trending ideas and discussions specifically from the INDIAN LinkedIn market regarding '{discovery_term}'."
+        elif discovery_region:
+            search_query = f'site:linkedin.com/posts/ OR site:linkedin.com/pulse/ "{discovery_term}" "{discovery_region}"'
+            task_description = f"Identify the top trending ideas and discussions on LinkedIn regarding '{discovery_term}' in the {discovery_region} context."
         else:
-            search_query = f'site:linkedin.com/posts/ OR site:linkedin.com/pulse/ "{discovery_term}"{region_query}'
-            task_description = f"Identify the top trending ideas, discussions, and thought leadership articles on LinkedIn regarding '{discovery_term}' in {discovery_region if discovery_region else 'the global context'}."
+            search_query = f'site:linkedin.com/posts/ OR site:linkedin.com/pulse/ "{discovery_term}"'
+            task_description = f"Identify the top trending ideas and discussions on LinkedIn regarding '{discovery_term}' in the global context."
 
         discovery_task = Task(
             description=f"""
@@ -303,19 +307,23 @@ if anthropic_api_key and serper_api_key:
             
             Using the search query: {search_query}
             
-            Perform the following:
+            STEP-BY-STEP REQUIREMENTS:
             1. Find the top 20-25 most relevant LinkedIn posts or articles.
             2. Identify 3-5 recurring themes or "mainstream" opinions.
             3. Highlight 2-3 unique or "contrarian" perspectives that stand out.
             4. LIST AT LEAST 5 NOTABLE COMPANIES mentioned or active in these discussions.
             5. IF A REGION WAS SPECIFIED ({discovery_region}), identify nuances specific to that market.
-            6. MANDATORY: Provide a curated list of at least 10 direct, clickable URLs to the most interesting posts found. 
-               Format them as: [Post Title/Author](URL) - Short Summary.
+            6. MANDATORY URL LIST: Provide a list of EXACTLY 10-15 direct, clickable URLs. 
+               
+            CRITICAL INSTRUCTION FOR SOURCE FEED:
+            You MUST include the raw 'https://' URL for every source in the 'Source Feed' section. 
+            Format exactly as: - [Author/Title](https://www.linkedin.com/...) - Summary
+            If you do not provide the clickable URLs, the report is incomplete.
             
             Format the report using professional markdown with headings for 'The Pulse', 'Mainstream Themes', 'Regional Nuances', 'Notable Companies', 'Unique Perspectives', and 'Source Feed (Clickable Links)'.
             """,
             agent=discovery_scout,
-            expected_output="A structured Social Intelligence Report with themes, regional insights, specific company names, and a mandatory list of clickable LinkedIn URLs, formatted in markdown."
+            expected_output="A Social Intelligence Report where the 'Source Feed' section MUST contain at least 10 clickable markdown links using actual LinkedIn URLs discovered in the search."
         )
         
         discovery_crew = Crew(
