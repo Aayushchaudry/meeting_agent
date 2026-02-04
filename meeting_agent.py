@@ -307,23 +307,25 @@ if anthropic_api_key and serper_api_key:
             
             Using the search query: {search_query}
             
-            STEP-BY-STEP REQUIREMENTS:
-            1. Find the top 20-25 most relevant LinkedIn posts or articles.
-            2. Identify 3-5 recurring themes or "mainstream" opinions.
-            3. Highlight 2-3 unique or "contrarian" perspectives that stand out.
-            4. LIST AT LEAST 5 NOTABLE COMPANIES mentioned or active in these discussions.
-            5. IF A REGION WAS SPECIFIED ({discovery_region}), identify nuances specific to that market.
-            6. MANDATORY URL LIST: Provide a list of EXACTLY 10-15 direct, clickable URLs. 
-               
-            CRITICAL INSTRUCTION FOR SOURCE FEED:
-            You MUST include the raw 'https://' URL for every source in the 'Source Feed' section. 
-            Format exactly as: - [Author/Title](https://www.linkedin.com/...) - Summary
-            If you do not provide the clickable URLs, the report is incomplete.
+            STEP-BY-STEP BULK REQUIREMENTS:
+            1. PERFORM MULTIPLE SEARCHES: Do not stop at one search. Perform at least 5 different search variations 
+               (e.g., adding keywords like 'latest', 'trending', 'HR', 'Leadership' or specific Indian cities if applicable) 
+               to gather a large pool of unique LinkedIn posts.
+            2. Find and extract as many unique LinkedIn URLs as possible.
+            3. Identify 3-5 recurring themes from the overall pool.
+            4. LIST AT LEAST 10 NOTABLE COMPANIES active in these discussions.
+            5. MANDATORY BULK URL LIST: Provide a numbered list of EXACTLY 50 direct, clickable LinkedIn URLs.
             
-            Format the report using professional markdown with headings for 'The Pulse', 'Mainstream Themes', 'Regional Nuances', 'Notable Companies', 'Unique Perspectives', and 'Source Feed (Clickable Links)'.
+            CRITICAL INSTRUCTION FOR SOURCE FEED:
+            You MUST provide a numbered list from 1 to 50. 
+            Format: [Number]. [Post Title/Author](https://www.linkedin.com/...)
+            If you cannot find 50, provide the absolute maximum you can find, but aim for 50 by using multiple search variations.
+            Do not provide long summaries for each link in the bulk list; just the clickable title and URL.
+            
+            Format the report using professional markdown with headings for 'The Pulse', 'Mainstream Themes', 'Notable Companies', and 'BULK SOURCE FEED (50 LINKS)'.
             """,
             agent=discovery_scout,
-            expected_output="A Social Intelligence Report where the 'Source Feed' section MUST contain at least 10 clickable markdown links using actual LinkedIn URLs discovered in the search."
+            expected_output="A Social Intelligence Report containing a numbered list of exactly 50 clickable LinkedIn URLs in the 'BULK SOURCE FEED' section."
         )
         
         discovery_crew = Crew(
