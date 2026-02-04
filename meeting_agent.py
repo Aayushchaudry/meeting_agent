@@ -4,9 +4,15 @@ from crewai.process import Process
 from crewai_tools import SerperDevTool
 import os
 
+# Disable CrewAI telemetry and tracing to prevent UnicodeEncodeError in headers
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+os.environ["CREWAI_TELEMETRY_RECORD"] = "false"
+os.environ["OTEL_PYTHON_ID_GENERATOR"] = "random"
+
 # Streamlit app setup
-st.set_page_config(page_title="AI Meeting Agent 📝", layout="wide")
-st.title("AI Meeting Preparation Agent 📝")
+st.set_page_config(page_title="AI Meeting Agent", layout="wide")
+st.title("AI Meeting Preparation Agent")
 
 # Sidebar for API keys
 st.sidebar.header("API Keys")
@@ -14,27 +20,37 @@ anthropic_api_key = st.sidebar.text_input("Anthropic API Key", type="password")
 serper_api_key = st.sidebar.text_input("Serper API Key", type="password")
 
 # Check if all API keys are set
+# Sanitize inputs to remove non-ASCII characters that break headers
+def sanitize_input(text):
+    if not text: return ""
+    return text.encode("ascii", "ignore").decode("ascii")
+
 if anthropic_api_key and serper_api_key:
-    # # Set API keys as environment variables
+    # Strip whitespace from keys to prevent 403 errors
+    anthropic_api_key = anthropic_api_key.strip()
+    serper_api_key = serper_api_key.strip()
+
+    # Set API keys as environment variables
     os.environ["ANTHROPIC_API_KEY"] = anthropic_api_key
     os.environ["SERPER_API_KEY"] = serper_api_key
 
-    claude = LLM(model="claude-sonnet-4-20250514", temperature= 0.7, api_key=anthropic_api_key)
+    # Use litellm prefix 'anthropic/' to bypass native provider header bugs
+    claude = LLM(model="anthropic/claude-sonnet-4-20250514", temperature= 0.7, api_key=anthropic_api_key)
     search_tool = SerperDevTool()
 
     # Create Tabs
-    tab1, tab2 = st.tabs(["🤝 Meeting Preparation", "🌐 LinkedIn Topic Discovery"])
+    tab1, tab2, tab3 = st.tabs(["Meeting Preparation", "LinkedIn Topic Discovery", "Instagram Trend Scout"])
 
     with tab1:
         # Input fields - Your Company Context
         st.header("Your Company Details")
-        your_company_name = st.text_input("Your Company Name:", help="Enter your organization's name", key="your_co_name")
-        your_company_description = st.text_area(
+        your_company_name = sanitize_input(st.text_input("Your Company Name:", help="Enter your organization's name", key="your_co_name"))
+        your_company_description = sanitize_input(st.text_area(
             "Your Company Description:", 
             help="Briefly describe what your company does, key products/services, and unique value proposition",
             height=100,
             key="your_co_desc"
-        )
+        ))
         
         # Meeting Perspective
         meeting_perspective = st.radio(
@@ -46,11 +62,11 @@ if anthropic_api_key and serper_api_key:
         )
         
         st.header("Meeting Details")
-        company_name = st.text_input("Client Company Name:", help="The company you're meeting with", key="meeting_client_name")
-        meeting_objective = st.text_input("Meeting Objective:", help="e.g., 'Content partnership deal', 'Vendor evaluation'", key="meeting_obj")
-        attendees = st.text_area("Attendees and Their Roles (one per line):", help="Include names and titles", key="meeting_attendees")
+        company_name = sanitize_input(st.text_input("Client Company Name:", help="The company you're meeting with", key="meeting_client_name"))
+        meeting_objective = sanitize_input(st.text_input("Meeting Objective:", help="e.g., 'Content partnership deal', 'Vendor evaluation'", key="meeting_obj"))
+        attendees = sanitize_input(st.text_area("Attendees and Their Roles (one per line):", help="Include names and titles", key="meeting_attendees"))
         meeting_duration = st.number_input("Meeting Duration (minutes):", min_value=15, max_value=180, value=60, step=15, key="meeting_dur")
-        focus_areas = st.text_input("Specific Areas of Focus or Concerns:", help="e.g., 'Pricing', 'Technical integration', '3D rendering quality'", key="meeting_focus")
+        focus_areas = sanitize_input(st.text_input("Specific Areas of Focus or Concerns:", help="e.g., 'Pricing', 'Technical integration', '3D rendering quality'", key="meeting_focus"))
 
         # Define perspective-specific context
         if "Provider/Seller" in meeting_perspective:
@@ -264,18 +280,18 @@ if anthropic_api_key and serper_api_key:
             st.markdown(result)
 
     with tab2:
-        st.header("🌐 LinkedIn Topic Discovery")
+        st.header("LinkedIn Topic Discovery")
         st.markdown("""
         Search for trending ideas, corporate stances, or employee discussions across LinkedIn.
         You can search for a general topic or see what a specific company is saying about a topic.
         """)
         
-        discovery_term = st.text_input("Enter Topic/Keyword:", placeholder="e.g., 'Generative AI in Real Estate' or 'Women's Day'", key="disc_term")
+        discovery_term = sanitize_input(st.text_input("Enter Topic/Keyword:", placeholder="e.g., 'Generative AI in Real Estate' or 'Women's Day'", key="disc_term"))
         col1, col2 = st.columns(2)
         with col1:
-            discovery_company = st.text_input("Company Name (Optional):", placeholder="Limit to a specific company", key="disc_co")
+            discovery_company = sanitize_input(st.text_input("Company Name (Optional):", placeholder="Limit to a specific company", key="disc_co"))
         with col2:
-            discovery_region = st.text_input("Region/Country (Optional):", placeholder="e.g., 'India', 'UK', 'Global'", key="disc_region")
+            discovery_region = sanitize_input(st.text_input("Region/Country (Optional):", placeholder="e.g., 'India', 'UK', 'Global'", key="disc_region"))
         
         # Define the Discovery Agent
         discovery_scout = Agent(
@@ -343,18 +359,89 @@ if anthropic_api_key and serper_api_key:
                     result = discovery_crew.kickoff()
                 st.markdown(result)
 
+    with tab3:
+        st.header("Instagram Trend Scout")
+        st.markdown("""
+        Extract trending hashtags, visual styles, and popular Reels/Posts for any topic.
+        This tool uses search engine indexing to find public Instagram content without requiring an account.
+        """)
+        
+        insta_topic = sanitize_input(st.text_input("Enter Trend/Topic:", placeholder="e.g., 'Modern Interior Design' or 'Sustainable Tech'", key="insta_term"))
+        insta_region = sanitize_input(st.text_input("Region/Country (Optional):", placeholder="e.g., 'India'", key="insta_region"))
+        
+        # Define the Instagram Agent
+        insta_scout = Agent(
+            role='Visual Trend Analyst',
+            goal='Extract viral hashtags, aesthetic patterns, and high-engagement content from Instagram search results',
+            backstory='You are a creative strategist who lives on social media. You have a "photographic memory" for hashtags and can instantly spot the common visual vibe across dozens of posts.',
+            verbose=True,
+            allow_delegation=False,
+            llm=claude,
+            tools=[search_tool]
+        )
+        
+        # Search Logic for Instagram
+        region_suffix = f' "{insta_region}"' if insta_region else ""
+        insta_query = f'(site:instagram.com/p/ OR site:instagram.com/reels/) "{insta_topic}"{region_suffix}'
+        
+        insta_task = Task(
+            description=f"""
+            Analyze the Instagram landscape for: '{insta_topic}' {f'in {insta_region}' if insta_region else ''}.
+            
+            Using the query: {insta_query}
+            
+            REQUIRED BULK ANALYSIS:
+            1. PERFORM MULTIPLE SEARCHES: Perform at least 5 different search variations 
+               (e.g., searching for reels specifically, then posts, then adding keywords like 'viral', 'latest', or regional terms) 
+               to gather a large pool of unique Instagram content.
+            2. HASHTAG HARVEST: Find every hashtag used in the search snippets. Aggregate them and list the Top 15 most frequent hashtags.
+            3. VISUAL VIBE: Based on the captions and titles, describe the common aesthetic (e.g., 'Dark academia', 'Neon futuristic', 'Minimalist organic').
+            4. CONTENT RATIO: Determine if the topic is being driven more by 'Reels' or 'Static Posts' based on the URLs found.
+            5. MANDATORY BULK URL LIST: Provide a numbered list of EXACTLY 50 direct, clickable Instagram URLs.
+            
+            CRITICAL FORMATTING:
+            - Section 1: Trending Hashtag Cloud (Clean list of 15 hashtags)
+            - Section 2: Visual and Creative Pulse (2-3 paragraph summary of the trend)
+            - Section 3: Platform Insights (Reel vs Post dominance)
+            - Section 4: BULK CONTENT FEED (50 LINKS) (Numbered list of EXACTLY 50 clickable markdown links: [Title/Account](https://instagram.com/...))
+            
+            If you cannot find 50, provide the absolute maximum you can find by being persistent with search variations.
+            """,
+            agent=insta_scout,
+            expected_output="A creative trend report with a hashtag cloud, visual analysis, and a numbered list of exactly 50 clickable Instagram URLs."
+        )
+        
+        insta_crew = Crew(
+            agents=[insta_scout],
+            tasks=[insta_task],
+            verbose=True,
+            process=Process.sequential
+        )
+        
+        if st.button("Scout Instagram Trends", key="run_insta"):
+            if not insta_topic:
+                st.error("Please enter a trend or topic to scout.")
+            else:
+                with st.spinner("Visual Trend Analyst is harvesting Instagram data..."):
+                    result = insta_crew.kickoff()
+                st.markdown(result)
+
     st.sidebar.markdown("""
     ## How to use this app:
     
-    ### 🤝 Meeting Preparation Tab:
+    ### Meeting Preparation Tab:
     1. Provide your company details and meeting perspective.
     2. Enter the client company information and meeting details.
     3. Click 'Prepare Meeting' for a full strategic dossier.
 
-    ### 🌐 LinkedIn Discovery Tab:
+    ### LinkedIn Discovery Tab:
     1. Enter a topic you want to research (e.g., 'Sustainability').
     2. (Optional) Enter a company name to see their specific stance.
     3. Click 'Generate Idea Report' to see trends and post links.
+
+    ### Instagram Discovery Tab:
+    1. Enter a visual trend (e.g., 'Retro Aesthetic').
+    2. Click 'Scout Instagram Trends' to see hashtags and top Reels.
 
     ---
     **Required:** Anthropic and Serper API keys in the sidebar.
