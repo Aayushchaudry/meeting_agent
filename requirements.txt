@@ -1,6 +1,7 @@
 streamlit
-crewai[anthropic]
+crewai
 crewai-tools
+anthropic
 pydantic
 litellm
 python-dotenv
