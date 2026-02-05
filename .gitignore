@@ -128,7 +128,7 @@ dmypy.json
 .pyre/
 
 # Streamlit
-.streamlit/
+# .streamlit/
 
 # OS specific
 .DS_Store

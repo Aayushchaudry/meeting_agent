@@ -1,4 +1,6 @@
-streamlit 
-crewai
+streamlit
+crewai[anthropic]
 crewai-tools
-openai
+pydantic
+litellm
+python-dotenv
