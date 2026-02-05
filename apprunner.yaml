@@ -6,6 +6,21 @@ build:
       - pip3 install --upgrade pip
       - pip3 install -r requirements.txt --target .
 run:
-  command: sh -c "PYTHONPATH=. python3 -m streamlit run meeting_agent.py --server.port 8501 --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false --server.enableWebsocketCompression false"
+  runtime-env-vars:
+    - name: PYTHONPATH
+      value: "."
+    - name: STREAMLIT_SERVER_PORT
+      value: "8501"
+    - name: STREAMLIT_SERVER_ADDRESS
+      value: "0.0.0.0"
+    - name: STREAMLIT_SERVER_HEADLESS
+      value: "true"
+    - name: STREAMLIT_SERVER_ENABLE_CORS
+      value: "false"
+    - name: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+      value: "false"
+    - name: STREAMLIT_SERVER_ENABLE_WEBSOCKET_COMPRESSION
+      value: "false"
+  command: python3 -m streamlit run meeting_agent.py
   network:
     port: 8501
